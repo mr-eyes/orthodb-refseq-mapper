@@ -9,9 +9,11 @@ from tqdm import tqdm
 refseq_file = "test_cases/refseq.txt"
 orthodb_file = "test_cases/odb.tsv"
 
-# refseq_file = "ref_seq_data/horse_headers.txt"
-# orthodb_file = "orthodb_data/horse_odb10v0_genes.tab"
+if len(sys.argv) < 3:
+    exit("python analyse.py <refseq_fasta_headers> <orthodb_genes.tab>")
 
+refseq_file = sys.argv[1]
+orthodb_file = sys.argv[2]
 
 def header_tr_geneName(path):
     res = {}
@@ -41,6 +43,8 @@ odb_ogid_desc = ODB.odb_genes_info(path=orthodb_file, tax_id=9796, key="og_id", 
 rfsq_tr_geneName = header_tr_geneName(refseq_file)
 rfsq_tr_header = header_tr_line(refseq_file)
 
+matched_ncbi_ids = set()
+
 ncbi2refseq = {}
 with open("horse_gen2refseq.txt", 'r') as gen2refseq:
     ncbi_ids = odb_ncbi_ogid.keys()
@@ -67,6 +71,8 @@ _cases={"1:1":0,"1:m":0,"m:m":0}
 
 #check if the ID exist one time or more
 for ncbi_id, refseq_ids in ncbi2refseq.items():
+    at_least_one_isoform = False
+    max_no_of_separators = 0
     _ncbi_freq = len(odb_ncbi_ogid[ncbi_id])  # How many this NCBI_ID occurred?
     # How many refseq IDs mapped from this NCBI ID?
     _refseqs_freq = len(ncbi2refseq[ncbi_id])
@@ -81,6 +87,7 @@ for ncbi_id, refseq_ids in ncbi2refseq.items():
 
             if tr_id not in final_map:
                 final_map[tr_id] = og_id
+                matched_ncbi_ids.add(ncbi_id)
 
         else:
             # Oh! , It has occurred many times in the OrthoDB
@@ -89,7 +96,7 @@ for ncbi_id, refseq_ids in ncbi2refseq.items():
 
             isoform = False
             og_id = odb_ncbi_ogid[ncbi_id][0]
-            __desc = odb_ogid_desc[og_id][0]
+            __desc = odb_ogid_desc[og_id][0].lower()
 
             # hmmm, OrthoDB may got specific about single isoform, let's check that.
             if "isoform" in __desc:
@@ -101,14 +108,16 @@ for ncbi_id, refseq_ids in ncbi2refseq.items():
                 for _id in refseq_ids:
                     line = rfsq_tr_header[_id]
                     line = line.replace("transcript variant", "isoform")
-                    if __desc in line:
+                    if __desc in line.lower():
                         tr_id = line.split()[0].replace(">", "").strip()
                         final_map[tr_id] = og_id
+                        matched_ncbi_ids.add(ncbi_id)
 
             # Not specific? Ok, no problems.
             else:
                 for _refseq_id in refseq_ids:
                     final_map[_refseq_id] = og_id
+                    matched_ncbi_ids.add(ncbi_id)
 
     # O_O Many to many relationshittt, let's map with only the gene description.
     else:
@@ -120,7 +129,7 @@ for ncbi_id, refseq_ids in ncbi2refseq.items():
         desc_to_ogid = {}
 
         for _id in og_ids:
-            __desc = odb_ogid_desc[_id][0]
+            __desc = odb_ogid_desc[_id][0].lower()
             if "isoform" in __desc:
                 # Last comma to prevent mismatching X1 with X10 ;)
                 __desc = "isoform " + __desc.split("isoform")[-1].strip() + ","
@@ -132,25 +141,49 @@ for ncbi_id, refseq_ids in ncbi2refseq.items():
         __isoform = False
         if "isoform" in " ".join(desc_to_ogid.keys()):
             __isoform = True
+            at_least_one_isoform = True
 
         for _id in refseq_ids:
             # Will need more branching
             line = rfsq_tr_header[_id]
+            _no_of_separators = len(line.split(","))
+
+            if _no_of_separators > max_no_of_separators:
+                max_no_of_separators = _no_of_separators
+
             if __isoform:
                 line = line.replace("transcript variant", "isoform")
 
             tr_id = line.split()[0].replace(">", "").strip()
-            #tr_desc = line.split(",")[-2].strip()
+            
+            for __desc, og_id in desc_to_ogid.items():
 
-            for og_desc, og_id in desc_to_ogid.items():
-                if og_desc in line:
-                    final_map[tr_id] = og_id
-                    break
+                if "isoform" in __desc:
+                    __desc = "isoform " + __desc.split("isoform")[-1].strip()
+                    print (__desc)
+                    if __desc in line.lower():
+                        final_map[tr_id] = og_id
+                        matched_ncbi_ids.add(ncbi_id)
+                        
+
+                else:
+                    if _no_of_separators < max_no_of_separators:
+                        if __desc.lower() in line.lower():
+                            final_map[tr_id] = og_id
+                            matched_ncbi_ids.add(ncbi_id)
+                            
+
+
+
+            
+                    
 
 ## Check how many reads mapped
 if len(final_map) != len(rfsq_tr_header):
     print("%d Transcripts matched, %d missing from total %d" %
             (len(final_map), len(rfsq_tr_header) - len(final_map), len(rfsq_tr_header)))
+    
+    print("%d NCBI IDs mapped from total of %d IDs" % (len(matched_ncbi_ids), len(odb_ncbi_ogid.keys())))
 else:
     print("All records matched for the NCBI ID: %s" % (ncbi_id))
 
