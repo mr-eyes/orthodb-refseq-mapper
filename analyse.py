@@ -6,9 +6,6 @@ import json
 import sys
 from tqdm import tqdm
 
-refseq_file = "test_cases/refseq.txt"
-orthodb_file = "test_cases/odb.tsv"
-
 if len(sys.argv) < 3:
     exit("python analyse.py <refseq_fasta_headers> <orthodb_genes.tab>")
 
@@ -160,7 +157,6 @@ for ncbi_id, refseq_ids in ncbi2refseq.items():
 
                 if "isoform" in __desc:
                     __desc = "isoform " + __desc.split("isoform")[-1].strip()
-                    print (__desc)
                     if __desc in line.lower():
                         final_map[tr_id] = og_id
                         matched_ncbi_ids.add(ncbi_id)
