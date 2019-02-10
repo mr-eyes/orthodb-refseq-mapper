@@ -1,5 +1,5 @@
 # Directories to store data
-mkdir -p species/{monkey,horse,cow,elephant,rabbit,dog,human,platypus}/{refseq,orthodb}
+mkdir -p species/{monkey,horse,cow,elephant,rabbit,dog,human,platypus,mouse}/{refseq,orthodb,map}
 mkdir data
 
 #1 Monkey : Macaca mulatta
@@ -34,6 +34,11 @@ mv homo_sapien.rna.fna.gz species/human/refseq/
 wget -c ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Ornithorhynchus_anatinus/latest_assembly_versions/GCF_000002275.2_Ornithorhynchus_anatinus_5.0.1/GCF_000002275.2_Ornithorhynchus_anatinus_5.0.1_rna.fna.gz -O ornithorhynchus_anatinus.rna.fna.gz
 mv ornithorhynchus_anatinus.rna.fna.gz species/platypus/refseq/
 
+#9 Mouse : Mus musculus
+wget -c ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Mus_musculus/latest_assembly_versions/GCF_000001635.26_GRCm38.p6/GCF_000001635.26_GRCm38.p6_rna.fna.gz -O mus_musculus_rna.fna.gz
+mv mus_musculus_rna.fna.gz species/mouse/refseq/
+
+
 wget -c https://v100.orthodb.org/download/odb10v0_OG2genes.tab.gz && mv odb10v0_OG2genes.tab.gz data/
 wget -c https://v100.orthodb.org/download/odb10v0_genes.tab.gz && mv odb10v0_genes.tab.gz data/
 wget -c ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/gene2refseq.gz && mv gene2refseq.gz data/
@@ -42,8 +47,8 @@ wget -c ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/gene2refseq.gz && mv gene2refseq.gz
 
 # Getting the data of each species
 
-names=("cow" "dog" "elephant" "horse" "human" "monkey" "platypus" "rabbit")  ## Dirs Names
-taxas=("9913" "9615" "9785" "9796" "9606" "9544" "9258" "9986") ## Taxonomy IDs
+names=("cow" "dog" "elephant" "horse" "human" "monkey" "platypus" "rabbit" "mouse")  ## Dirs Names
+taxas=("9913" "9615" "9785" "9796" "9606" "9544" "9258" "9986" "10090") ## Taxonomy IDs
 
 len=${#names[*]}  # it returns the array length
 
@@ -56,7 +61,7 @@ do
     TAXA=${taxas[$i]}
     zcat data/odb10v0_genes.tab | grep "\s${TAXA}_0\s" > species/${NAME}/orthodb/${NAME}_odb10v0_genes.tab
     zcat data/odb10v0_OG2genes.tab.gz | grep "\s${TAXA}_0:" > species/${NAME}/orthodb/${NAME}_odb10v0_OG2genes.tab
-    zcat data/gene2refseq.gz | grep -w "^${TAXA}" | awk '{print $2,$4}' > species/${NAME}/${NAME}_gene2refseq.txt
+    zcat data/gene2refseq.gz | grep -w "^${TAXA}" | awk '{print $2,$4,$NF}' > species/${NAME}/${NAME}_gene2refseq.txt
     i=$((i+1))
 done
 
