@@ -56,10 +56,22 @@ class OrthoDB:
                         continue 
 
                     feature_key = self.gene_name_to_ncbigid[_gene_name][0]
+                
                 else:
                     feature_key = line[key_idx]
 
-                feature_value = line[val_idx]
+
+                if val_idx == 5:
+                    _gene_name = line[3]
+                    if _gene_name not in self.gene_name_to_ncbigid:
+                        continue
+                    
+                    feature_value = self.gene_name_to_ncbigid[_gene_name][0]
+
+                else:
+                    feature_value = line[val_idx]
+                
+                
                 total += 1
 
                 if len(feature_value) > 2:
