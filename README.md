@@ -15,9 +15,14 @@ Mapping RefSeq RNA to OrthoDB
 ```bash
 bash prepare_species.sh
 ```
+
 ### Process any species
 ```bash
 python analyse.py <species_name> <species_tax_id>
+```
+### Check mapping quality
+```bash
+python check_mapping_quality.py <species_name> <species_tax_id>
 ```
 
 > You can add species as much as you can.
