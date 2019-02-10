@@ -21,5 +21,8 @@ python analyse.py <species_name> <species_tax_id>
 ```
 
 > You can add species as much as you can.
-> Mapping is not guaranteed to be **PERFECT** 
+ 
+> Mapping is not guaranteed to be **PERFECT**.
+
 > Not all reads are mapped.
+> 
