@@ -1,3 +1,7 @@
+import gzip
+from Bio import SeqIO
+from tqdm import tqdm
+
 class RefSeq:
 
     def __init__(self, file_name):
