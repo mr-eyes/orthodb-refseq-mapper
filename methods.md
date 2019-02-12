@@ -9,7 +9,7 @@
   - *odb_ogid_desc* : Mapping Orthologus Gene Unique ID to Gene Description
   
 **Parsing is performed as following:**
-> As stated in `https://v100.orthodb.org/download/README.txt` the file  `odb10v0_genes.tab` has column names `[uq_ortho_gene_id, tax_id, prot_seq_id, uniprot_id, synonyms(), ncbi_gid, description]`
+> As stated in  [OrthoDB README](https://v100.orthodb.org/download/README.txt) the file  `odb10v0_genes.tab` has column names `[uq_ortho_gene_id, tax_id, prot_seq_id, uniprot_id, synonyms(), ncbi_gid, description]`
 So, If the key and value from the previous column name, will just directly parse it from the `odb10v0_genes.tab` file.
 
 **dict:** *odb_ncbi_ogid* `NCBI ID` as a key, and to get the NCBI from the `Gene Symbol`:
