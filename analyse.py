@@ -10,24 +10,24 @@ if len(sys.argv) < 2:
 
 species = sys.argv[1]
 taxonomy_id = int(sys.argv[2])
+deep_search = 0
+
+if len(sys.argv) == 4:
+    if sys.argv == "-d":
+        deep_search = True
 
 refseq_file = glob("species/" + species + "/refseq/*gz")[0]
 orthodb_file = glob("species/" + species + "/orthodb/" + species + "*_genes.tab")[0]
 gene2refseq_file = glob("species/" + species + "/*gene2refseq.txt")[0]
 og2genes_file = glob("species/" + species + "/orthodb/" + species + "*_OG2genes.tab")[0]
 
-## Parsing OG2Genes
-og2genes = {}
-with open(og2genes_file, 'r') as f:
-    for line in f:
-        line = line.strip().split()
-        group_id = line[0]
-        gene_id = line[1]
-        if gene_id in og2genes:
-            og2genes[gene_id].append(group_id)
-        else:
-            og2genes[gene_id] = [group_id]
 
+class Report():
+    orthodb_genes_parsing = {}
+    def __init__(self):
+        pass
+
+REPORT= Report()
 
 
 def header_tr_line(path):
@@ -46,8 +46,7 @@ def header_tr_line(path):
                 tr_id = record.id
                 line = record.description
                 res[tr_id] = line
-    
-    
+
     return res
 
 
@@ -77,23 +76,41 @@ def write_mapped_reads(final_map, species, path):
 
                 else:
                     odb_group_ids = ";".join(og2genes[odb_gene_id])
-                
+
                 description = tr_id + "|" + odb_gene_id + "|" + odb_group_ids + "|" + species
                 names.write(description + "\t" + description + "\n")
                 fasta.description = fasta.id = fasta.name = description
                 SeqIO.write(fasta, handle, "fasta")
-    
+
     print("[LOG] %d gene_ids not found in OG2Genes" % (unfound_in_og2genese))
+
+
+## Parsing OG2Genes
+og2genes = {}
+with open(og2genes_file, 'r') as f:
+    for line in f:
+        line = line.strip().split()
+        group_id = line[0]
+        gene_id = line[1]
+        if gene_id in og2genes:
+            og2genes[gene_id].append(group_id)
+        else:
+            og2genes[gene_id] = [group_id]
 
 
 
 ODB = ortho.OrthoDB(gene2refseq_file)
-odb_ncbi_ogid = ODB.odb_genes_info(path=orthodb_file, tax_id=taxonomy_id, key="ncbi_gid", value="og_id")
-odb_ogid_desc = ODB.odb_genes_info(path=orthodb_file, tax_id=taxonomy_id, key="og_id", value="description")
+ODB.debug = True
+
+if deep_search:
+    ODB.activate_deep_search()
+
+odb_ncbi_ogid = ODB.odb_genes_info(path=orthodb_file, tax_id=taxonomy_id, key="ncbi_id", value="odb_gene_id")
+odb_ogid_desc = ODB.odb_genes_info(path=orthodb_file, tax_id=taxonomy_id, key="odb_gene_id", value="description")
 
 rfsq_tr_header = header_tr_line(refseq_file)
-
 matched_ncbi_ids = set()
+
 
 ncbi2refseq = {}
 with open(gene2refseq_file, 'r') as gen2refseq:
@@ -104,6 +121,7 @@ with open(gene2refseq_file, 'r') as gen2refseq:
         line = line.strip().split(" ")
         ncbi = line[0]
         refseq = line[1]
+        
         if ncbi not in ncbi_ids:
             continue
 
