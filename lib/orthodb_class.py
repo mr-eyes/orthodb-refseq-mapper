@@ -26,10 +26,15 @@ class OrthoDB:
         if len(result):
             result = result[0]["_id"]
             if self.debug:
-                print("GENE: %s NCBI_ID: %s" % (gene_symbol, result[0]["_id"]))
+                print("GENE: %s NCBI_ID: %s" % (gene_symbol, result))
 
             return result
         return False
+
+    def deep_search(self, gene_name):
+        pass
+
+
     
     def odb_genes_info(self, path, tax_id, key, value):
         """
@@ -55,7 +60,7 @@ class OrthoDB:
         key_idx = info_location[key]
         val_idx = info_location[value]
         total = 0
-        found = 0
+        values_found = 0
         __report = {"unfound_geneSymbols":set()}
 
         with open(path, "r") as f:
@@ -73,23 +78,51 @@ class OrthoDB:
                 # "Check if the key is NCBI ID, and because it's not available, attempt to get ncbi_id from {gene_name_to_ncbigid}"
                 if key_idx == 5:
                     _gene_name = line[3]
+                    found = 0
+
+                    # It may have ";" (multiple synonymus) check and iterate then try to find
+                    if ";" in _gene_name:
+                            multiple_synonymus = 1
+                            _gene_names_list = set(_gene_name.split(";"))
+                            _intersection = list(_gene_names_list.intersection(set(self.gene_name_to_ncbigid.keys())))
+                            
+                            if len(_intersection) == 1:
+                                _gene_name = _intersection[0] # The first and only gene
+                                found = 1
+                                multiple_synonymus = 0
+                    
                     
                     if _gene_name not in self.gene_name_to_ncbigid:
-                        # if Option: Deep search is activated try to query it online
-                        if self._op_thorough:
+
+                        # Deep search is activated try to query it online
+                        if self._op_thorough and not found:
+                        
+                            if not multiple_synonymus: # Single gene_name
+                                _gene_names_list = [_gene_name]
+
+                            # if multiple (contains ;), _gene_names_list already set before.
+
+                            for _gene in _gene_names_list:
+                                    _received_ncbi_id = self.get_ncbi_id(_gene_name, tax_id)
+                                    if _received_ncbi_id:  # Check it's not empty
+                                        self.gene_name_to_ncbigid[_gene_name] = _received_ncbi_id # Add to the dict for future use
+                                        found = 1
+                                        break # Just break, we've found it's NCBI ID
+                        
+
                             _received_ncbi_id = self.get_ncbi_id(_gene_name, tax_id)
 
-                            if _received_ncbi_id: # Check it's not empty
-                                self.gene_name_to_ncbigid[_gene_name] = _received_ncbi_id
-                            else:
-                                # Still can't find it? reporting the unfound geneSymbols
+
+                             # Still not found? reporting the unfound geneSymbols
+                            if not found:                            
                                 __report["unfound_geneSymbols"].add(_gene_name)
                                 continue
 
+
+                        # Option: Deep search not activated
                         else:
-                            # Option: Deep search not activated
                             __report["unfound_geneSymbols"].add(_gene_name) # reporting the unfound geneSymbol
-                            continue 
+                            continue
                        
                     # Gene Symbol found
                     feature_key = self.gene_name_to_ncbigid[_gene_name][0]
@@ -127,9 +160,10 @@ class OrthoDB:
 
                 if len(feature_value) > 2:
                     _value_ = feature_value
-                    found += 1
+                    values_found += 1
                 else:
-                    _value_ = "-"
+                    # No real value
+                    continue
 
                 if feature_key not in result:
                     result[feature_key] = [_value_]
@@ -138,6 +172,8 @@ class OrthoDB:
 
         all_values = [x for v in result.values() for x in v]
         if self.debug:
-            print ("(Tax_ID %d) %d %s found (%d uniq) in %d record" % (tax_id, found, value, len(set(all_values)), total))
+            print(__report)
+            print("-----------------------")
+            print ("(Tax_ID %d) %d %s found (%d uniq) in %d record" % (tax_id, values_found, value, len(set(all_values)), total))
         
         return result
