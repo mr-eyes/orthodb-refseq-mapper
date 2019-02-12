@@ -78,7 +78,7 @@ class OrthoDB:
                 # "Check if the key is NCBI ID, and because it's not available, attempt to get ncbi_id from {gene_name_to_ncbigid}"
                 if key_idx == 5:
                     _gene_name = line[3]
-                    found = 0
+                    found = False
 
                     # It may have ";" (multiple synonymus) check and iterate then try to find
                     if ";" in _gene_name:
@@ -87,46 +87,46 @@ class OrthoDB:
                             _intersection = list(_gene_names_list.intersection(set(self.gene_name_to_ncbigid.keys())))
                             
                             if len(_intersection) == 1:
-                                _gene_name = _intersection[0] # The first and only gene
-                                found = 1
-                                multiple_synonymus = 0
+                                _gene_name = _intersection[0] # The first and only gene and it's found
+                                found = True
+                                
+                    else:
+                        multiple_synonymus = 0
                     
                     
+                    # If the gene name is not found in the gene2refseq file.
                     if _gene_name not in self.gene_name_to_ncbigid:
-
+                        if not multiple_synonymus:  # Single gene_name
+                                _gene_names_list = [_gene_name]
+                        
+                        
                         # Deep search is activated try to query it online
                         if self._op_thorough and not found:
-                        
-                            if not multiple_synonymus: # Single gene_name
-                                _gene_names_list = [_gene_name]
-
                             # if multiple (contains ;), _gene_names_list already set before.
 
                             for _gene in _gene_names_list:
-                                    _received_ncbi_id = self.get_ncbi_id(_gene_name, tax_id)
+                                    _received_ncbi_id = self.get_ncbi_id(_gene, tax_id)
                                     if _received_ncbi_id:  # Check it's not empty
-                                        self.gene_name_to_ncbigid[_gene_name] = _received_ncbi_id # Add to the dict for future use
-                                        found = 1
+                                        self.gene_name_to_ncbigid[_gene] = _received_ncbi_id # Add to the dict for future use
+                                        found = True
                                         break # Just break, we've found it's NCBI ID
-                        
 
-                            _received_ncbi_id = self.get_ncbi_id(_gene_name, tax_id)
-
-
-                             # Still not found? reporting the unfound geneSymbols
+                            # Still not found? report to the missings. Skip the current iteration
                             if not found:                            
                                 __report["unfound_geneSymbols"].add(_gene_name)
                                 continue
 
 
                         # Option: Deep search not activated
+                        # report to the missings. Skip the current iteration
                         else:
                             __report["unfound_geneSymbols"].add(_gene_name) # reporting the unfound geneSymbol
                             continue
                        
-                    # Gene Symbol found
+                    # Iteration reached here? then the Gene Symbol has been found
                     feature_key = self.gene_name_to_ncbigid[_gene_name][0]
                 
+                # The requested feature is not NCBI ID.
                 else:
                     feature_key = line[key_idx]
 
@@ -147,7 +147,7 @@ class OrthoDB:
                                 continue
 
                         else:
-                            # Option:Thorough not activated
+                            # Option:Thorough not activated, so just report the missing.
                             __report["unfound_geneSymbols"].add(_gene_name) # reporting the unfound geneSymbol
                             continue 
                        
@@ -161,6 +161,7 @@ class OrthoDB:
                 if len(feature_value) > 2:
                     _value_ = feature_value
                     values_found += 1
+                    
                 else:
                     # No real value
                     continue
@@ -172,8 +173,8 @@ class OrthoDB:
 
         all_values = [x for v in result.values() for x in v]
         if self.debug:
-            print(__report)
-            print("-----------------------")
-            print ("(Tax_ID %d) %d %s found (%d uniq) in %d record" % (tax_id, values_found, value, len(set(all_values)), total))
-        
+            #_unit_report =  "Creation of dict(%s:%s) from a total of %d records\n" % (key, value, total)
+            _unit_report = "%d %ss mapped to %d %ss, distinct values count: %d\n" % (len(result), key.upper() , len(all_values), value.upper(), len(set(all_values)))
+            print(_unit_report)
+            
         return result
