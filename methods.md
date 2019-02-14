@@ -10,7 +10,7 @@
   
 **Parsing is performed as following:**
 > As stated in  [OrthoDB README](https://v100.orthodb.org/download/README.txt) the file  `odb10v0_genes.tab` has column names `[uq_ortho_gene_id, tax_id, prot_seq_id, synonyms(), description]`
-So, If the key and value ∈ (columns names list) we will just directly parse it from the `odb10v0_genes.tab` file, If ∉ to the columns list, we will try to parse it from another file like in the following example.
+So, If the key or value of the **ODB** dictionaries ∈ (columns names list) we will just directly parse it from the `odb10v0_genes.tab` file, If ∉ to the columns list, we will try to parse it from another file like in the following example.
 
 **dict:** *odb_ncbi_ogid* `NCBI ID` as a key, and to get the NCBI from the `Gene Symbol`:
 
