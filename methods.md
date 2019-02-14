@@ -2,6 +2,25 @@
 
 ## Samples of mentioned files
 
+### Gene2Refseq
+
+| NCBI_ID   | Transcript_ID  | Gene_Symbol    |
+|-----------|----------------|----------------|
+| 114108587 | NM_001366559.1 | ATF7-NPFF      |
+| 114022705 | -              | LOC114022705   |
+| 114022708 | -              | LOC114022708   |
+| 114108587 | NM_001366560.1 | ATF7-NPFF      |
+| 114108587 | NR_159377.1    | ATF7-NPFF      |
+
+### odb*_genes.tab [OrthoDB README](https://v100.orthodb.org/download/README.txt)
+
+| og_id         | tax_id | prot_name      | synonyms()   | description                            |
+|---------------|--------|----------------|--------------|----------------------------------------|
+| 9606_0:000000 | 9606_0 | YP_003024037.1 | MT-ND6;ND6   | NADH-ubiquinone oxidoreductase chain 6 |
+| 9606_0:000001 | 9606_0 | YP_003024033.1 | MT-ND3;ND3   | NADH-ubiquinone oxidoreductase chain 3 |
+| 9606_0:000002 | 9606_0 | YP_003024027.1 | MT-ND2;ND2   | NADH-ubiquinone oxidoreductase chain 2 |
+| 9606_0:000003 | 9606_0 | YP_003024031.1 | ATP6;MT-ATP6 | ATP synthase subunit a                 |
+| 9606_0:000004 | 9606_0 | YP_003024032.1 | COX3;MT-CO3  | Cytochrome c oxidase subunit 3         |
 
 ## Essential dictionaries construction
 
