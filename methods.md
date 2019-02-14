@@ -5,24 +5,17 @@
 
 ## Essential dictionaries construction
 
-- Parse `gene2refseq.txt` and construct dictionary `{geneSymbol:NCBI_ID}`
+- refseq dictionaries: Parse the `gene2refseq.txt` to construct two dicts:
+  - *gene_name_to_ncbigid* : `{geneSymbol:NCBI_ID}`
+  - *ncbi_to_refseq* : map `NCBI IDs` to `RefSeq` `transcript ID(s)` , it's a one:many relationship.
 
-- Parse the `odb*_genes.tab` file to construct two dicts:
-  - *odb_ncbi_ogid* : Mapping NCBI ID to Orthologus Gene Unique ID
-  - *odb_ogid_desc* : Mapping Orthologus Gene Unique ID to Gene Description
+- ODB dictionaries: 
+  - *odb_ogid_desc* : Mapping `Orthologus Gene Unique ID` to `Gene Description` by parsing the `odb10v0_genes.tab` file
+  - *odb_ncbi_ogid* : Mapping `NCBI ID` to `Orthologus Gene Unique ID` as following:
+      1. parsing the `odb10v0_genes.tab` file to get `Gene Symbol` and `Orthologus Gene Unique ID`
+      2. Quary the *gene_name_to_ncbigid* to get the `NCBI ID`, if not found
+      3. deep search option could be selected (Slows down the process as it make online query)
   
-**Parsing is performed as following:**
-> As stated in  [OrthoDB README](https://v100.orthodb.org/download/README.txt) the file  `odb10v0_genes.tab` has column names `[uq_ortho_gene_id, tax_id, prot_seq_id, synonyms(), description]`
-So, If the key or value of the **ODB** dictionaries ∈ (columns names list) we will just directly parse it from the `odb10v0_genes.tab` file, If ∉ to the columns list, we will try to parse it from another file like in the following example.
-
-**dict:** *odb_ncbi_ogid* `NCBI ID` as a key, and to get the NCBI from the `Gene Symbol`:
-
-- Check the `NCBI ID` corresponding to `Gene Symbol`  from the `gene2refseq.txt` file.
-    -A. If found, just add it to the dictionary and continue.
-    -B. If the `Gene Symbol` not found in the `gene2refseq.txt` file deep search option could be selected (Slows down the process as it make online query)
-
--Parsing the `gene2refseq.txt` file to construct a **dict:** *ncbi_to_refseq* that map `NCBI IDs` to `RefSeq` `transcript ID(s)` , it's a one:many relationship.
-> Now we have all `NCBI IDs` we extracted from the `odb10v0_genes.tab` file with all it's corresponding `Transcripts IDs` that are found in the refseq `FASTA` file.
 
 ## Mapping Heuristics
 
