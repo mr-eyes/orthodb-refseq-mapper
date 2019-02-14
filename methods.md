@@ -29,8 +29,28 @@ So, If the key and value from the previous column name, will just directly parse
 
  The relation could be categorized into one of 3 types, for each `NCBI ID` **:**
 
- **1:1 Relationship**   If the `NCBI ID` occurred in a **single** `odb_genes` record, and it has just **one** corresponding `Transcript ID` in the `refseq_fa`
+**Case 1. [1:1] Relationship**   If the `NCBI ID` occurred in a **single** `odb_genes` record, and it has just **one** corresponding `Transcript ID` in the `refseq_fa`
 
-**1:M Relationship** If the `NCBI ID` occurred in **single** `odb_genes` record, and it has **multiple** corresponding `Transcript IDs` in the **refseq_fa**
+**Case 2. [1:M] Relationship** If the `NCBI ID` occurred in **single** `odb_genes` record, and it has **multiple** corresponding `Transcript IDs` in the **refseq_fa**
 
-**M:M Relationship** If the `NCBI ID` occurred in **multiple** `odb_genes` records,   and it has **multiple** corresponding `Transcript IDs` in the **refseq_fa**
+**Case 3. [M:M] Relationship** If the `NCBI ID` occurred in **multiple** `odb_genes` records,   and it has **multiple** corresponding `Transcript IDs` in the **refseq_fa**
+
+### Case 1.
+Just map the `Transcript ID` to the `odb gene ID`
+
+### Case 2.
+
+ - Check if there is an "isoform" in any of the `odb_genes` descriptions
+	 - If **YES**
+		 - Map only the transcripts that are having corressponding `transcript variants`
+	 - If **NO**
+		 - Map all the transcripts to the same  `odb gene ID`.
+
+### Case 3. (Matching by gene description)
+- Iterating over each corressponding transcript header:
+	 -  Check if there is an "isoform" in any of the `odb_genes` descriptions
+		 - If **YES**
+			 - Replace all "transcript variants" with "isoforms" in transcript headers 
+		- Iterating over every gene description in all corresponding `og genes IDs`
+			- Check if the refseq transcript's gene description exist in the og gene description.
+				- If **YES** perform mapping.
