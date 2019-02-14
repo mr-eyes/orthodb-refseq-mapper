@@ -1,5 +1,8 @@
 # **Methods**
 
+## Samples of mentioned files
+
+
 ## Essential dictionaries construction
 
 - Parse `gene2refseq.txt` and construct dictionary `{geneSymbol:NCBI_ID}`
@@ -14,9 +17,9 @@ So, If the key or value of the **ODB** dictionaries ∈ (columns names list) we 
 
 **dict:** *odb_ncbi_ogid* `NCBI ID` as a key, and to get the NCBI from the `Gene Symbol`:
 
-- Check the corresponding `NCBI ID` to `Gene Symbol`  from the `gene2refseq.txt` file.
-    a. If found, just add it to the dictionary and continue.
-    b. If the `Gene Symbol` not found in the `gene2refseq.txt` file deep search option could be selected (Slows down the process as it make online query)
+- Check the `NCBI ID` corresponding to `Gene Symbol`  from the `gene2refseq.txt` file.
+    -A. If found, just add it to the dictionary and continue.
+    -B. If the `Gene Symbol` not found in the `gene2refseq.txt` file deep search option could be selected (Slows down the process as it make online query)
 
 -Parsing the `gene2refseq.txt` file to construct a **dict:** *ncbi_to_refseq* that map `NCBI IDs` to `RefSeq` `transcript ID(s)` , it's a one:many relationship.
 > Now we have all `NCBI IDs` we extracted from the `odb10v0_genes.tab` file with all it's corresponding `Transcripts IDs` that are found in the refseq `FASTA` file.
