@@ -48,6 +48,6 @@
 
 **Case 2. [1:M] Relationship** If the `NCBI ID` occurred in **single** `odb_genes` record, and it has **multiple** corresponding `Transcript IDs` in the **refseq_fa**. We try to map the `Orthologus Gene Unique ID` to the exact transcript of the corresponding `NCBI ID` using the description in the `odb_genes` file. But if we could not, the `Orthologus Gene Unique ID` will be mapped to all the transcripts of this gene. 
 
-**Case 3. [M:M] Relationship** If the `NCBI ID` occurred in **multiple** `odb_genes` records,   and it has **multiple** corresponding `Transcript IDs` in the **refseq_fa**. Again we try to map the `Orthologus Gene Unique ID` to the exact transcript of the corresponding `NCBI ID` using the description in the `odb_genes` file. But we ended up with many `Orthologus Gene Unique ID` mapping to many transcripts, we drop this realtionship completely to avoid ambiguity 
+**Case 3. [M:M] Relationship** If the `NCBI ID` occurred in **multiple** `odb_genes` records,   and it has **multiple** corresponding `Transcript IDs` in the **refseq_fa**. Again we try to map the `Orthologus Gene Unique ID` to the exact transcript of the corresponding `NCBI ID` using the description in the `odb_genes` file. But if we still ending up with many `Orthologus Gene Unique ID` mapping to many transcripts, we drop this realtionship completely to avoid ambiguity 
 
 Note: The description in the `odb_genes` file uses the word "isoform" while the `refseq_fa` uses the word "transcript variant" to describe the transcripts so we consider this during the matching
