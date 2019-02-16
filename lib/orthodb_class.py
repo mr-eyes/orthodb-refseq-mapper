@@ -184,7 +184,7 @@ class OrthoDB:
 
                 else:
                     # No real value
-                    continue
+                    _value_ = "-NULL-"
 
                 if feature_key not in result:
                     result[feature_key] = [_value_]
@@ -193,7 +193,7 @@ class OrthoDB:
 
         all_values = [x for v in result.values() for x in v] 
         if self.debug:
-            _unit_report = "%d %ss mapped to %d %ss, distinct values count: %d\n" % (len(result), key.upper() , len(all_values), value.upper(), len(set(all_values)))
+            _unit_report = "%d %ss mapped to %d %ss, distinct values count: %d" % (len(result), key.upper() , len(all_values), value.upper(), len(set(all_values)))
             self.__report["summary"].append(_unit_report)
             
         return result
