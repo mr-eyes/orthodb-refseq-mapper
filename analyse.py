@@ -10,20 +10,27 @@ if len(sys.argv) < 2:
 
 species = sys.argv[1]
 taxonomy_id = int(sys.argv[2])
-deep_search = 0
+deep_search = False
+detailed_report = False
 
-if len(sys.argv) == 4:
-    if sys.argv == "-d":
+if len(sys.argv) > 3:
+    if "--deep-search" in sys.argv:
         deep_search = True
+    
+    if "--detailed-report" in sys.argv:
+        detailed_report = True
 
 refseq_file = glob("species/" + species + "/refseq/*gz")[0]
 orthodb_file = glob("species/" + species + "/orthodb/" + species + "*_genes.tab")[0]
 gene2refseq_file = glob("species/" + species + "/*gene2refseq.txt")[0]
 og2genes_file = glob("species/" + species + "/orthodb/" + species + "*_OG2genes.tab")[0]
 
+print("Processing %s" % (species))
 
 class Report():
-    orthodb_genes_parsing = {}
+    orthodb_genes_parsing = []
+    analysis_summary = []
+    missing_ogids = set()
     def __init__(self):
         pass
 
@@ -52,11 +59,11 @@ def header_tr_line(path):
 
 def write_mapped_reads(final_map, species, path):
     global og2genes
+    global refseq2ncbi
+    
     mapped_ids = final_map.keys()
     names_file = "species/%s/map/%s_mapped_reads.fa.names" % (species, species)
     mapped_reads_file = "species/%s/map/%s_mapped_reads.fa" % (species, species)
-    print("Parsing refseq fasta file...")
-    unfound_in_og2genese = 0
     names = open(names_file, "w")
 
     if ".gz" in path:
@@ -71,18 +78,19 @@ def write_mapped_reads(final_map, species, path):
             if tr_id in mapped_ids:
                 odb_gene_id = final_map[tr_id]
                 if odb_gene_id not in og2genes:
-                    unfound_in_og2genese += 1
+                    REPORT.missing_ogids.add(odb_gene_id)
                     odb_group_ids = "NULL"
+                    continue # Don't write it to disk.
 
                 else:
                     odb_group_ids = ";".join(og2genes[odb_gene_id])
 
                 description = tr_id + "|" + odb_gene_id + "|" + odb_group_ids + "|" + species
-                names.write(description + "\t" + description + "\n")
+                names.write(description + "\t" + odb_gene_id + "|" + refseq2ncbi[tr_id][0] + "\n")
                 fasta.description = fasta.id = fasta.name = description
                 SeqIO.write(fasta, handle, "fasta")
 
-    print("[LOG] %d gene_ids not found in OG2Genes" % (unfound_in_og2genese))
+    # print("[LOG] %d gene_ids not found in OG2Genes" % (unfound_in_og2genese))
 
 
 ## Parsing OG2Genes
@@ -103,16 +111,25 @@ ODB = ortho.OrthoDB(gene2refseq_file)
 ODB.debug = True
 
 if deep_search:
+    print("Deep Search is activated..")
     ODB.activate_deep_search()
+
+print("Parsing files...")
 
 odb_ncbi_ogid = ODB.odb_genes_info(path=orthodb_file, tax_id=taxonomy_id, key="ncbi_id", value="odb_gene_id")
 odb_ogid_desc = ODB.odb_genes_info(path=orthodb_file, tax_id=taxonomy_id, key="odb_gene_id", value="description")
+
+# REPORTING
+REPORT.orthodb_genes_parsing.append(ODB._OrthoDB__report)
+
 
 rfsq_tr_header = header_tr_line(refseq_file)
 matched_ncbi_ids = set()
 
 
 ncbi2refseq = {}
+refseq2ncbi = {}
+
 with open(gene2refseq_file, 'r') as gen2refseq:
     ncbi_ids = odb_ncbi_ogid.keys()
     refseq_ids = rfsq_tr_header.keys()
@@ -121,22 +138,30 @@ with open(gene2refseq_file, 'r') as gen2refseq:
         line = line.strip().split(" ")
         ncbi = line[0]
         refseq = line[1]
-        
+
         if ncbi not in ncbi_ids:
             continue
 
         if refseq not in refseq_ids:
             continue
 
+        #NCBI 2 REFSEQ
         if ncbi not in ncbi2refseq:
             ncbi2refseq[ncbi] = [refseq]
         else:
             ncbi2refseq[ncbi].append(refseq)
+        
+        #REFSEQ 2 NCBI
+        if ncbi not in refseq2ncbi:
+            refseq2ncbi[refseq] = [ncbi]
+        else:
+            refseq2ncbi[refseq].append(ncbi)
 
 final_map = {}
 
 _cases={"1:1":0,"1:m":0,"m:m":0}
 
+print("Mapping...")
 #check if the ID exist one time or more
 for ncbi_id, refseq_ids in ncbi2refseq.items():
     at_least_one_isoform = False
@@ -159,7 +184,7 @@ for ncbi_id, refseq_ids in ncbi2refseq.items():
 
         else:
             # Oh! , It has occurred many times in the OrthoDB
-            # This is Many to 1 Relationshit
+            # This is 1 to Many Relationshit
             _cases["1:m"] += 1
 
             isoform = False
@@ -242,13 +267,20 @@ for ncbi_id, refseq_ids in ncbi2refseq.items():
                     
 
 ## Check how many reads mapped
-if len(final_map) != len(rfsq_tr_header):
-    print("%d Transcripts matched, %d missing from total %d" %
-            (len(final_map), len(rfsq_tr_header) - len(final_map), len(rfsq_tr_header)))
-    
-    print("%d NCBI IDs mapped from total of %d IDs" % (len(matched_ncbi_ids), len(odb_ncbi_ogid.keys())))
-else:
-    print("All records matched for the NCBI ID: %s" % (ncbi_id))
+_total_no_matched_og_ids = len(set(final_map.values()))
+_total_no_matched_transcrtipts = len(final_map)
+_total_no_og_ids = len(odb_ogid_desc)
+_total_no_transcripts = len(rfsq_tr_header)
+_unmatched_transcripts = _total_no_transcripts - _total_no_og_ids
+_matched_genes = len(matched_ncbi_ids)
+_total_genes = len(odb_ncbi_ogid.keys())
+_unmatched_genes = _total_genes - _matched_genes
+
+REPORT.analysis_summary.append("%d Mapped Ortho genes from total of %d Ortho Genes" % (_total_no_matched_og_ids, _total_no_og_ids))
+REPORT.analysis_summary.append("%d Mapped Refseq Transcripts from total of %d Transcripts" % (_total_no_matched_transcrtipts, _total_no_transcripts))
+REPORT.analysis_summary.append("%d matched Genes from total of %d Genes" % (_matched_genes, _total_genes))
+
+
 
 output_json = "species/%s/map/%s_" % (species, species)
 f = open(output_json + "mapped.json", "w")
@@ -260,16 +292,41 @@ f.close()
 print("Writing mapped reads fasta and names files..")
 write_mapped_reads(final_map, species, refseq_file)
 
+output_report = "species/%s/map/report/%s_report_" % (species, species)
+
+# Report Summary
+
+with open(output_report + "summary.log", 'w') as summary_report:
+    summary_report.write("~~ %s Mapping Summary ~~\n" % (species))
+    summary_report.write("OrthoDB Files parsing summary\n")
+    for record in REPORT.orthodb_genes_parsing[0]["summary"]:
+        summary_report.write(record + "\n")
+    
+    summary_report.write("------------------\n")
+    summary_report.write("Mapping Summary \n")
+
+    for record in REPORT.analysis_summary:
+        summary_report.write(record + "\n")
 
 
+if detailed_report:
+    print("Generating detailed report")
+    
+    # Print the unmatched to a separate file: unmatched_transcripts.txt
+    unmatched = set(rfsq_tr_header.keys()) - set(final_map.keys())
 
-## Print the unmatched to a separate file: unmatched_transcripts.txt
-# unmatched = set(rfsq_tr_header.keys()) - set(final_map.keys())
+    with open(output_report + "unmatched_transcripts.log", 'w') as unmatched_file:
+        for _tr_id in unmatched:
+            unmatched_file.write(rfsq_tr_header[_tr_id] + "\n")
 
-# with open("unmatched_transcripts.txt", 'w') as unmatched_file:
-#     for _tr_id in unmatched:
-#         unmatched_file.write(rfsq_tr_header[_tr_id] + "\n")
+    with open(output_report + "unfound_genes.log", 'w') as unfound:
+        unfound.write("Failed to retreieve the NCBI IDs of these gene symbols \n\n")
+        
+        for _gene_symbol in REPORT.orthodb_genes_parsing[0]["unfound_geneSymbols"]:
+            unfound.write(_gene_symbol + "\n")
+    
 
-
-print ("-----------")
-print (_cases)
+    with open(output_report + "missing_ogIDs.log", 'w') as missings:
+        missings.write("List of Ortho Genes not found in OG2Genes.tab file \n")
+        for og in REPORT.missing_ogids:
+            missings.write(og + "\n")

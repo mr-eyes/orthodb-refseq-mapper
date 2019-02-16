@@ -38,7 +38,7 @@ with open(map_json_file) as f:
 
 # Reading OrthoDB og_id to NCBI
 ODB = ortho.OrthoDB(gene2refseq_file)
-odb_ogid_ncbi = ODB.odb_genes_info(path=orthodb_file, tax_id=9796, key="og_id", value="ncbi_gid")
+odb_ogid_ncbi = ODB.odb_genes_info(path=orthodb_file, tax_id=taxonomy_id, key="odb_gene_id", value="ncbi_id")
 
 correct = 0
 wrong = 0

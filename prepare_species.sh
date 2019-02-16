@@ -1,5 +1,5 @@
 # Directories to store data
-mkdir -p species/{monkey,horse,cow,elephant,rabbit,dog,human,platypus,mouse}/{refseq,orthodb,map}
+mkdir -p species/{monkey,horse,cow,elephant,rabbit,dog,human,platypus,mouse}/{refseq,orthodb,map/report}
 mkdir data
 
 #1 Monkey : Macaca mulatta
